@@ -8,7 +8,6 @@
 class Singleton {
   constructor(name) {
     this.name = name;
-    this.instance = null;
   }
 
   getName() {
@@ -36,22 +35,22 @@ console.log(a === b) // true
 class CreateDiv {
   constructor(html) {
     if (CreateDiv.instance) {
-      return CreateDiv.instance
+      return CreateDiv.instance;
     }
-    this.html = html;
+    CreateDiv.html = html;
     CreateDiv.init();
     CreateDiv.instance = this;
   }
 
   static init() {
     const div = document.createElement('div');
-    div.innerHTML = this.html;
+    div.innerHTML = CreateDiv.html;
     document.body.appendChild(div);
   }
 }
 
-const a = new CreateDiv('sven1');
-const b = new CreateDiv('sven2');
+const a = new CreateDiv('a');
+const b = new CreateDiv('b');
 
 console.log(a === b);
 ```
@@ -61,13 +60,13 @@ console.log(a === b);
 ```js
 class CreateDiv {
   constructor(html) {
-    this.html = html;
+    CreateDiv.html = html;
     CreateDiv.init()
   }
   
   static init() {
     const div = document.createElement('div');
-    div.innerHTML = this.html;
+    div.innerHTML = CreateDiv.html;
     document.body.appendChild(div); 
   }
 }
@@ -89,3 +88,72 @@ console.log(a === b); // true
 
 ## 惰性單例模式
 惰性單例是指需要的時候才創造物件實例。
+
+舉例來說，一個網站可能有一個懸浮的登錄視窗，很明顯這個登陸浮窗是唯一的，不會同時出現兩個登陸浮窗，這種時候就可以運用單例模式，不過我們需要再點擊登陸時，才創建這個登陸浮窗，而非一進入這個網站就創建登陸浮窗，因為並不是每個人進入網站都會執行登陸動作，也許它只是要看看文章，所以需要用到惰性單例。
+
+最簡單的辦法是在按鈕上添加點擊事件，點擊之後創建登陸視窗。
+```js
+class LoginLayer {
+  constructor() {
+    LoginLayer.init();
+  }
+
+  static init() {
+    if (!this.instance) {
+      const div = document.createElement('div');
+      div.innerHTML = '這是登陸視窗';
+      document.body.appendChild(div);
+      this.instance = div;
+    }
+
+    return this.instance;
+  }
+
+  static hide() {
+    this.instance.style.display = 'none';
+  }
+}
+
+import LoginLayer from './loginLayer.js';
+
+const createLoginLayer = () => {
+  new LoginLayer();
+};
+
+btn.addEventListener('click', createLoginLayer);
+```
+
+## 通用的惰性單例模式
+我們完成惰性單例了，但它其實還有一個問題，如果我們需要創建另一個不同功能的懸浮視窗，我們需要再寫一次幾乎一樣的程式碼，這樣絕對不是一件好事。
+
+```js
+class Singleton {
+  constructor(fn) {
+    let result;
+    return function() {
+      return result || (result = fn.apply(this, arguments));
+    };
+  }
+}
+
+class LoginLayer {
+  constructor() {
+    const div = document.createElement('div');
+    div.innerHTML = '這是登陸視窗';
+    document.body.appendChild(div);
+    return div;
+  }
+}
+
+class AnotherLayer {
+  constructor() {
+    const div = document.createElement('div');
+    div.innerHTML = '這是其它視窗';
+    document.body.appendChild(div);
+    return div;
+  }
+}
+
+const createSingleLoginLayer = new Singleton(LoginLayer);
+const createAnotherLoginLayer = new Singleton(AnotherLayer);
+```
