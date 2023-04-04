@@ -8,16 +8,23 @@
 ```js
 class MyImage {
   constructor() {
+    // 創建 img 元素
     this.imgNode = document.createElement('img');
+    // 將 img 元素加入到 body 中
     document.body.appendChild(this.imgNode);
+    // 創建一個新的 Image 對象
     this.img = new Image();
+
+    // 當圖片載入完成後，將 img 元素的 src 設為該圖片的 src
     this.img.onload = () => {
       this.imgNode.src = this.img.src;
     };
   }
   
   setSrc(src) {
+     // 先將 img 元素的 src 設定為本地的 loading gif 路徑，讓使用者知道圖片還在載入中
     this.imgNode.src = '本地的 lodaing gif 路徑'; 
+    // 設定 Image 對象的 src 為傳入的圖片來源
     this.img.src = src; 
   }
 }
@@ -25,6 +32,28 @@ class MyImage {
 const myImage = new MyImage();
 myImage.setSrc('https://.../img.jpg');
 ```
+也可以用函數的寫法
+```js
+const createLazyImage = (src) => {
+  const imgNode = document.createElement('img');
+  document.body.appendChild(imgNode);
+  const img = new Image();
+  img.onload = () => {
+    imgNode.src = img.src;
+  };
+  img.src = src;
+  return {
+    setSrc: (newSrc) => {
+      imgNode.src = '本地的 loading gif 路徑';
+      img.src = newSrc;
+    }
+  };
+};
+
+const myImage = createLazyImage('https://.../img.jpg');
+myImage.setSrc('https://.../another_img.jpg');
+```
+
 雖然成功做出懶加載的效果，但這不符合單一職責原則。
 
 單一職責原則指是，一個類（通常也包括物件或函數）而言，應該**僅有一個引起它變
@@ -65,6 +94,39 @@ class ProxyImage {
 const proxyImage = new ProxyImage();
 proxyImage.setSrc('https://.../img.jpg');
 ```
+
+函數的寫法
+
+```js
+const createMyImage = () => {
+  const imgNode = document.createElement('img');
+  document.body.appendChild(imgNode);
+
+  return {
+    setSrc: (newSrc) => {
+      imgNode.src = newSrc;
+    }
+  };
+};
+
+const createProxyImage = (src) => {
+  const img = new Image();
+  const myImage = createMyImage();
+  img.onload = () => {
+    myImage.setSrc(img.src);
+  }
+  img.src = src;
+  return {
+    setSrc: (newSrc) => {
+      myImage.setSrc('本地的 loading gif 路徑')
+      img.src = newSrc;
+    }
+  };
+};
+
+const myImage = createProxyImage('https://.../img.jpg');
+```
+
 ## 快取代理
 快取可以為一些開銷大的運算結果提供暫時的儲存，若下次運算傳遞進來的參數跟之前一樣，則可以返回前面儲存的結果。
 
@@ -98,4 +160,44 @@ const proxyMult = (function(){
 // 第一次調用代理函數，會計算乘積 1*2*3*4=24，並且把結果保存到緩存中
 proxyMult( 1, 2, 3, 4 ); // 输出：24 
 ```
+
+## 用高階函數動態創建代理
+滿足下列兩項其中一項，即可稱為高階函數  
+* 接受函數作為輸入(參數)
+* 輸出一個函數
+
+我們可以通過傳入運算的函數給另一個創造代理模式的工廠函數，來更靈活的創造緩存代理
+```js
+const mult = (...nums) => {
+  return nums.reduce((total, val) => total * val, 1);
+} 
+
+const plus = (...nums) => {
+  return nums.reduce((total, val) => total + val, 1);
+}
+
+const createProxyFactory = function(fn) { 
+  const cache = {}; 
+
+  return function(...nums){ 
+    const strNums = nums.join(',');
+    if ( strNums in cache ){ 
+      return cache[ strNums ]; 
+    } 
+    return cache[ strNums ] = fn(...nums); 
+  } 
+};
+
+const proxyMult = createProxyFactory( mult );
+const proxyPlus = createProxyFactory( plus );
+```
+
+## 小結
+代理模式還有非常多的應用，例如
+* 防火牆代理
+* 遠程代理
+* 保護代理：用於物件應該有不同訪問權限的情況
+... 等等
+
+雖然代理模式非常好用，但我們並不需要在一開始時，就先去寫代理模式的程式碼，當真正發現不方便直接訪問某個物件時﹐再編寫即可。
 
