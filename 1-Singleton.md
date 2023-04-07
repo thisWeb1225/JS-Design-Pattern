@@ -52,11 +52,15 @@ class CreateDiv {
 const a = new CreateDiv('a');
 const b = new CreateDiv('b');
 
-console.log(a === b);
+console.log(a === b); // true
 ```
 這段程式碼中，`CreateDiv` 實際上負責兩件事情，第一是創建物件和執行初始化 `init` 方法，第二是保證只有一個物件，雖然我們還沒接觸過**單一職責原則**，但感覺得出來這是不好的做法，起碼這個 class 看起來很奇怪。
 
+所以我們可以額外寫一個類，這個類負責保證只會有一個 `CreateDiv` 實例。
+
 ## 用代理模式實現單例模式
+我們可以透過代理模式的方式，只訪問代理的物件，而這個代理物件負責保證只有一個 `CreateDiv` 實例:
+
 ```js
 class CreateDiv {
   constructor(html) {
@@ -114,8 +118,6 @@ class LoginLayer {
   }
 }
 
-import LoginLayer from './loginLayer.js';
-
 const createLoginLayer = () => {
   new LoginLayer();
 };
@@ -157,3 +159,29 @@ class AnotherLayer {
 const createSingleLoginLayer = new Singleton(LoginLayer);
 const createAnotherLoginLayer = new Singleton(AnotherLayer);
 ```
+
+## 利用閉包和 IIFE 製作簡單的單例物件
+在很多函式庫都會看到閉包和 IIFE 結合使用，製作私有變數，其實這樣也算是一種單例模式，以上面登錄模塊的例子:
+
+```js
+const LoginLayer = (function() {
+  const div = document.createElement('div');
+
+  const init = () => {
+    div.innerHTML = '這是登陸視窗';
+    document.body.appendChild(div);
+  }
+
+  const hide = () => {
+    div.style.display = 'none';
+  }
+
+  return {
+    init,
+    hide,
+  }
+})();
+
+LoginLayer.init();
+```
+因為 IIFE 會馬上執行函數，並返回包含 `init` 和 `hide` 兩個方法的物件，所以只會有一個 `LoginLayer` 物件。
