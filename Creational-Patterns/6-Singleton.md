@@ -31,29 +31,33 @@ console.log(a === b) // true
 這段程式碼雖然已經實現單例模式了，但還有一個問題，就是**不透明性**，使用者必須要知道它是一個單例類，且跟以往用 new XXX 的方式不同，這裡偏要用 getInstance 來創建實例。
 
 ## 透明的單例模式
+通常購物網站只會有一個購物車，這個時候就可以使用單例模式:
+
 ```js
-class CreateDiv {
-  constructor(html) {
-    if (CreateDiv.instance) {
-      return CreateDiv.instance;
+class CreateCart {
+  static instance = null;
+
+  constructor() {
+    if (CreateCart.instance) {
+      return CreateCart.instance;
     }
-    CreateDiv.html = html;
-    CreateDiv.init();
-    CreateDiv.instance = this;
+    CreateCart.init();
+    CreateCart.instance = this;
   }
 
   static init() {
     const div = document.createElement('div');
-    div.innerHTML = CreateDiv.html;
+    div.innerHTML = '購物車';
     document.body.appendChild(div);
   }
 }
 
-const a = new CreateDiv('a');
-const b = new CreateDiv('b');
+const cart1 = new CreateCart();
+const cart2 = new CreateCart();
 
-console.log(a === b); // true
+console.log(cart1 === cart2); // true
 ```
+
 這段程式碼中，`CreateDiv` 實際上負責兩件事情，第一是創建物件和執行初始化 `init` 方法，第二是保證只有一個物件，雖然我們還沒接觸過**單一職責原則**，但感覺得出來這是不好的做法，起碼這個 class 看起來很奇怪。
 
 所以我們可以額外寫一個類，這個類負責保證只會有一個 `CreateDiv` 實例。
