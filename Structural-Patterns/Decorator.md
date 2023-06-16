@@ -110,6 +110,56 @@ productWithBoth.decorate(); // 輸出：添加促銷標籤 添加運費資訊
 ```
 裝飾器模式可以運用在很多地方，比如遊戲中的角色生級時，增加技能。或是網頁中的表單需要根據不同的情況顯示不同的表格，都可以使用裝飾器模式。
 
+## 裝飾函數
+有時候我們要增加功能時，最簡單的方式就是直接更改函數本身，不過這樣不符合開放 - 封閉原則，而且在規模較大的專案時，我們不想去碰舊的函數，此時我們就可以利用裝飾器模式的概念來將舊函數添加新功能，如下:
+```js
+window.onload = function(){ 
+  alert (1); 
+} 
+
+const _onload = window.onload || function(){}; 
+
+window.onload = function(){ 
+  _onload(); 
+  alert (2); 
+} 
+```
+
+不過這樣有些缺點
+1. 要維護中間變數 _onload
+2. this 指向可能會有問題
+
+所以我們可以這樣解決
+```js
+Function.prototype.before = function( beforefn ){ 
+  const __self = this; // 保存原函數的引用
+  // 原函數會調用 prototype.before，所以這裡的 this 是指向原函數
+
+  return function(){ // 返回包含了原函數和新函數的"代理"函數
+    beforefn.apply( this, arguments ); // 執行新函數，且保證 this 不被劫持，新函數接受的參數
+    return __self.apply( this, arguments ); // 執行原函數並返回原函數的執行結果，並且保證 this 不被劫持
+ } 
+} 
+Function.prototype.after = function( afterfn ){ 
+  const __self = this; 
+  return function(){ 
+    const ret = __self.apply( this, arguments );  // 先執行原函數並返回原函數的執行結果，並且保證 this 不被劫持
+    afterfn.apply( this, arguments );  // 執行新函數
+    return ret; 
+ } 
+}; 
+
+window.onload = function(){ 
+  alert (1); 
+} 
+window.onload = ( window.onload || function(){} ).after(function(){ 
+  alert (2); 
+}).after(function(){ 
+  alert (3); 
+}).after(function(){ 
+  alert (4); 
+}); 
+```
 
 ## 裝飾器模式的總概念
 最後我們來簡單寫一次比較概念化的裝飾器模式吧！
